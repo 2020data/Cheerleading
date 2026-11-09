@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>專屬啦啦隊！可愛應援舞台 (錄影＆分享版)</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入可愛圓體字型 -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --font-cute: 'M PLUS Rounded+1c', 'Fredoka', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            font-family: var(--font-cute);
+            background: linear-gradient(135deg, #fff0f6 0%, #f3e8ff 50%, #e0f2fe 100%);
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* 可愛果凍按鈕立體效果 */
+        .btn-jelly {
+            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.12), 0 8px 15px rgba(0,0,0,0.08);
+        }
+        .btn-jelly:active {
+            transform: translateY(4px) scale(0.97);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0,0,0,0.06);
+        }
+        .btn-jelly:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        /* 舞台霓虹邊框 */
+        .stage-container {
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.8), 0 14px 32px -5px rgba(236, 72, 153, 0.28);
+            border: 6px solid #ffffff;
+        }
+
+        /* 錄影紅點閃爍 */
+        @keyframes recPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.88); }
+        }
+        .rec-dot {
+            animation: recPulse 0.9s infinite ease-in-out;
+        }
+
+        /* 彈窗進場動畫 */
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-animate {
+            animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-700 py-2.5 px-2 sm:px-4 md:py-4">
+
+    <!-- 頂部通知 Toast -->
+    <div id="toast-msg" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-3 bg-slate-900/90 text-white px-5 py-2.5 rounded-full shadow-xl font-extrabold text-xs sm:text-sm flex items-center gap-2 border-2 border-pink-400">
+        <span id="toast-icon">💖</span>
+        <span id="toast-text">已複製專屬應援訊息！</span>
+    </div>
+
+    <!-- 頂部標題與音效控制列 -->
+    <header class="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 bg-white/85 backdrop-blur-md px-3.5 py-2 rounded-3xl shadow-sm border-2 border-pink-200 mb-2.5">
+        <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-amber-400 flex items-center justify-center text-white shadow-sm animate-bounce">
+                <i class="fa-solid fa-video text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-base sm:text-xl font-black bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 bg-clip-text text-transparent tracking-wide">
+                    萌萌啦啦隊！專屬應援錄影＆分享舞台
+                </h1>
+                <p class="text-[11px] sm:text-xs text-slate-400 font-bold hidden sm:block">輸入名字一鍵錄製應援短片、頒發「好棒棒獎狀」或傳送連結鼓勵好友！</p>
+            </div>
+        </div>
+
+        <!-- 語音與音效開關 + 重新開啟成品按鈕 -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <button id="btn-reopen-modal" onclick="openShareModal()" class="hidden btn-jelly items-center gap-1 px-3 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-purple-500 to-pink-500 text-white border-2 border-white">
+                <i class="fa-solid fa-gift"></i>
+                <span>查看應援影片/分享</span>
+            </button>
+            <button id="btn-toggle-voice" onclick="toggleVoice()" class="btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-pink-100 text-pink-600 border-2 border-pink-300">
+                <i class="fa-solid fa-microphone-lines"></i>
+                <span id="voice-status-text">語音：開</span>
+            </button>
+            <button id="btn-toggle-sfx" onclick="toggleSfx()" class="btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-600 border-2 border-amber-300">
+                <i class="fa-solid fa-volume-high"></i>
+                <span id="sfx-status-text">音效：開</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主內容區 -->
+    <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col gap-2.5">
+
+        <!-- 步驟1：輸入專屬名稱、鼓勵小語與曲目選擇 -->
+        <section class="bg-white/90 backdrop-blur-md p-3 sm:p-4 rounded-3xl shadow-sm border-2 border-pink-200">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                <!-- 名稱輸入框 + 鼓勵稱號 -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 flex-1">
+                    <label for="input-name" class="whitespace-nowrap font-extrabold text-pink-500 text-xs sm:text-sm flex items-center gap-1">
+                        <i class="fa-solid fa-star text-amber-400"></i> 應援主角：
+                    </label>
+                    <div class="relative w-32 sm:w-40">
+                        <input 
+                            id="input-name" 
+                            type="text" 
+                            value="洋洋" 
+                            maxlength="8"
+                            placeholder="輸入名字..." 
+                            oninput="handleNameChange(this.value)"
+                            class="w-full pl-3 pr-7 py-1.5 rounded-2xl border-2 border-pink-300 bg-pink-50/60 text-pink-600 font-black text-sm sm:text-base focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
+                        >
+                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-pink-300 pointer-events-none text-xs">
+                            <i class="fa-solid fa-pen"></i>
+                        </span>
+                    </div>
+
+                    <!-- 專屬鼓勵印章選擇 -->
+                    <select id="select-praise" onchange="handlePraiseChange(this.value)" class="px-2.5 py-1.5 rounded-2xl border-2 border-amber-300 bg-amber-50 text-amber-800 font-extrabold text-xs sm:text-sm focus:outline-none">
+                        <option value="宇宙無敵好棒棒">🏅 宇宙無敵好棒棒</option>
+                        <option value="全村最閃亮的希望">🌟 全村最閃亮的希望</option>
+                        <option value="顏值與實力天花板">👑 顏值與實力天花板</option>
+                        <option value="水逆退散好運爆棚">🍀 水逆退散好運爆棚</option>
+                        <option value="今天也辛苦了超棒">💖 今天也辛苦了超棒</option>
+                    </select>
+                </div>
+
+                <!-- 快速範例按鈕 -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] font-bold text-slate-400">快速點選：</span>
+                    <button onclick="setQuickName('洋洋')" class="btn-jelly px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-extrabold text-xs border border-amber-300">🐥 洋洋</button>
+                    <button onclick="setQuickName('小寶')" class="btn-jelly px-2.5 py-1 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-600 font-extrabold text-xs border border-pink-300">🐰 小寶</button>
+                    <button onclick="setQuickName('水水')" class="btn-jelly px-2.5 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-600 font-extrabold text-xs border border-purple-300">✨ 水水</button>
+                    <button onclick="setQuickName('阿呆')" class="btn-jelly px-2.5 py-1 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-600 font-extrabold text-xs border border-sky-300">🐻 阿呆</button>
+                    <button onclick="setQuickName('全村的希望')" class="btn-jelly px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-extrabold text-xs border border-emerald-300">🏆 全村的希望</button>
+                </div>
+            </div>
+
+            <!-- 步驟2：四首應援曲目選擇與【開始應援並自動錄影】按鈕 -->
+            <div class="mt-2.5 pt-2.5 border-t border-pink-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 flex-1">
+                    <button onclick="selectSong(0)" id="song-btn-0" class="song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-amber-400 bg-amber-300 text-amber-950">
+                        <span>🦆</span> 經典呱呱曲
+                    </button>
+                    <button onclick="selectSong(1)" id="song-btn-1" class="song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-pink-200 bg-white text-slate-600">
+                        <span>👍</span> 超級好棒棒
+                    </button>
+                    <button onclick="selectSong(2)" id="song-btn-2" class="song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-pink-200 bg-white text-slate-600">
+                        <span>🍀</span> 元氣滿滿曲
+                    </button>
+                    <button onclick="selectSong(3)" id="song-btn-3" class="song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-pink-200 bg-white text-slate-600">
+                        <span>👑</span> 閃耀全場MVP
+                    </button>
+                </div>
+
+                <!-- 執行按鈕群：錄影並應援 + 單純播放 + 分享卡片 -->
+                <div class="flex items-center gap-2">
+                    <button id="btn-record-play" onclick="startCheerWithRecording()" class="btn-jelly flex-1 md:flex-initial px-4 py-2 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-1.5 border-2 border-white shadow-md">
+                        <i id="record-icon" class="fa-solid fa-circle-dot"></i>
+                        <span id="record-text">🎬 開始應援並自動錄影</span>
+                    </button>
+                    <button id="btn-main-play" onclick="toggleRoutinePlay(false)" class="btn-jelly px-3.5 py-2 rounded-2xl bg-pink-100 hover:bg-pink-200 text-pink-600 font-black text-xs sm:text-sm flex items-center justify-center gap-1 border-2 border-pink-300" title="單純觀看應援表演">
+                        <i id="play-icon" class="fa-solid fa-play"></i>
+                        <span id="play-text">純播放</span>
+                    </button>
+                    <button onclick="openShareModal()" class="btn-jelly px-3 py-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs sm:text-sm flex items-center justify-center gap-1 border-2 border-amber-300" title="打開好棒棒獎狀與分享連結">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span class="hidden sm:inline">鼓勵分享</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 步驟3：高畫質可錄製 Canvas 啦啦隊應援舞台 -->
+        <section id="stage-box" class="stage-container relative w-full rounded-[30px] overflow-hidden bg-sky-100 select-none flex items-center justify-center">
+            <!-- 主舞台 Canvas (880x460 16:9 高清比例，可直接串流錄製成影片並支援點擊互動) -->
+            <canvas id="stage-canvas" width="880" height="460" class="w-full h-auto max-h-[410px] object-contain block cursor-pointer"></canvas>
+
+            <!-- 左上角即時錄影狀態覆蓋層 -->
+            <div id="rec-badge" class="hidden absolute top-3.5 left-4 z-30 bg-rose-600/90 backdrop-blur-sm text-white px-3.5 py-1 rounded-full font-black text-xs sm:text-sm items-center gap-2 shadow-lg border-2 border-white pointer-events-none">
+                <span class="w-2.5 h-2.5 rounded-full bg-white rec-dot"></span>
+                <span id="rec-timer">REC 00:00</span>
+                <span class="text-[11px] bg-white/20 px-1.5 py-0.5 rounded-md">錄製中...可點擊下方特技加料！</span>
+            </div>
+
+            <!-- 右上角一鍵截圖獎狀按鈕 -->
+            <button onclick="downloadCertificatePNG()" class="btn-jelly absolute top-3.5 right-4 z-30 bg-white/90 hover:bg-white text-pink-600 px-3 py-1 rounded-full font-black text-xs flex items-center gap-1.5 shadow-md border-2 border-pink-300">
+                <i class="fa-solid fa-camera-retro"></i>
+                <span>存下好棒棒圖卡</span>
+            </button>
+        </section>
+
+        <!-- 步驟4：互動控制面板（絢麗啦啦隊特技 + 手動好棒棒打Call棒） -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            
+            <!-- 左側：絢麗特技觸發區 -->
+            <div class="bg-white/90 backdrop-blur-md p-3 rounded-3xl shadow-sm border-2 border-purple-200 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xs sm:text-sm font-black text-purple-600 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                        啦啦隊絢麗特技（錄影中點擊也會錄進去喔！）
+                    </h2>
+                    <span class="text-[11px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">特技秀</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="triggerStunt('toss')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-b from-sky-400 to-blue-500 text-white font-extrabold text-xs border-2 border-white">
+                        <span class="text-lg mb-0.5">🌪️</span>
+                        <span>空中拋接旋轉</span>
+                    </button>
+                    <button onclick="triggerStunt('pyramid')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-b from-pink-400 to-rose-500 text-white font-extrabold text-xs border-2 border-white">
+                        <span class="text-lg mb-0.5">🏰</span>
+                        <span>愛心金字塔</span>
+                    </button>
+                    <button onclick="triggerStunt('fireworks')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-gradient-to-b from-amber-400 to-orange-500 text-white font-extrabold text-xs border-2 border-white">
+                        <span class="text-lg mb-0.5">🎆</span>
+                        <span>漫天煙火彩帶</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右側：手動打 Call 應援棒 -->
+            <div class="bg-white/90 backdrop-blur-md p-3 rounded-3xl shadow-sm border-2 border-amber-200 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xs sm:text-sm font-black text-amber-600 flex items-center gap-1.5">
+                        <i class="fa-solid fa-hands-clapping text-pink-500"></i>
+                        好棒棒打 Call 應援棒（狂按發射彈幕與音效！）
+                    </h2>
+                    <span id="combo-badge" class="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-extrabold">好棒棒能量：🔥 0</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="manualCall('quack')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs border-2 border-amber-300">
+                        <span class="text-lg mb-0.5">🦆</span>
+                        <span>呱呱叫應援</span>
+                    </button>
+                    <button onclick="manualCall('praise')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-black text-xs border-2 border-pink-300">
+                        <span class="text-lg mb-0.5">👍</span>
+                        <span>好棒棒印章雨</span>
+                    </button>
+                    <button onclick="manualCall('whistle')" class="btn-jelly flex flex-col items-center justify-center p-2 rounded-2xl bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-black text-xs border-2 border-emerald-300">
+                        <span class="text-lg mb-0.5">📣</span>
+                        <span>吹哨子歡呼</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- =========================================================
+         彈窗 1：錄影完成 / 下載應援影片 / 分享給好友鼓勵他好棒棒 Modal
+         ========================================================= -->
+    <div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 overflow-y-auto">
+        <div class="modal-animate bg-white w-full max-w-2xl rounded-[32px] border-4 border-pink-300 shadow-2xl overflow-hidden my-auto">
+            <!-- Modal 頂部標題 -->
+            <div class="bg-gradient-to-r from-pink-500 via-rose-400 to-amber-400 px-5 py-3.5 flex items-center justify-between text-white">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                        <h3 class="font-black text-base sm:text-lg leading-tight" id="modal-title-text">專屬應援完成！送給他一個大大的「好棒棒」！</h3>
+                        <p class="text-xs text-white/90 font-bold">可下載應援影片、好棒棒認證圖卡，或複製專屬連結傳給對方！</p>
+                    </div>
+                </div>
+                <button onclick="closeShareModal()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white font-bold">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal 內容區 -->
+            <div class="p-4 sm:p-5 space-y-4 max-h-[82vh] overflow-y-auto">
+                
+                <!-- 區塊 A：錄製好的影片預覽與下載 -->
+                <div id="video-preview-section" class="bg-pink-50/70 p-3.5 rounded-2xl border-2 border-pink-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-black text-xs sm:text-sm text-pink-600 flex items-center gap-1.5">
+                            <i class="fa-solid fa-film"></i> 專屬啦啦隊應援實況影片
+                        </span>
+                        <span id="video-status-tag" class="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-extrabold">
+                            ✨ 含合成伴奏音軌
+                        </span>
+                    </div>
+
+                    <!-- 影片播放器或尚未錄影提示 -->
+                    <div id="video-player-wrap" class="hidden flex-col items-center gap-2.5">
+                        <video id="recorded-video" controls playsinline loop class="w-full max-h-[230px] rounded-xl border-2 border-white shadow-md bg-slate-900"></video>
+                        
+                        <div class="flex flex-wrap items-center justify-center gap-2 w-full">
+                            <button onclick="downloadRecordedVideo()" class="btn-jelly flex-1 min-w-[160px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow">
+                                <i class="fa-solid fa-download"></i>
+                                <span>📥 下載應援影片保存</span>
+                            </button>
+                            <button id="btn-native-share-video" onclick="nativeShareVideo()" class="btn-jelly flex-1 min-w-[160px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>📲 直接分享影片給好友</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 若尚未錄影時的引導 -->
+                    <div id="no-video-hint" class="py-4 text-center space-y-2">
+                        <p class="text-xs sm:text-sm text-slate-600 font-bold">目前還沒有錄製影片喔！點擊下方按鈕即可自動表演並錄下完整應援影片：</p>
+                        <button onclick="closeShareModal(); startCheerWithRecording();" class="btn-jelly px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-black text-xs sm:text-sm inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-dot"></i> 立即開始應援並自動錄影
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 區塊 B：下載「宇宙無敵好棒棒」認證獎狀 PNG -->
+                <div class="bg-amber-50/80 p-3.5 rounded-2xl border-2 border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="text-3xl">🏆</div>
+                        <div>
+                            <h4 class="font-black text-xs sm:text-sm text-amber-900">頒發【好棒棒專屬應援獎狀】高清圖卡</h4>
+                            <p class="text-[11px] sm:text-xs text-amber-700 font-medium">將小鴨、兔兔、小熊與主角名字做成超萌認證卡，傳到 LINE 群組誇獎他！</p>
+                        </div>
+                    </div>
+                    <button onclick="downloadCertificatePNG()" class="btn-jelly whitespace-nowrap px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs sm:text-sm flex items-center gap-1.5 border-2 border-white">
+                        <i class="fa-solid fa-image"></i> 下載好棒棒圖卡 (PNG)
+                    </button>
+                </div>
+
+                <!-- 區塊 C：複製鼓勵文字 ＋ 專屬應援連結 (對方點開直接看表演！) -->
+                <div class="bg-purple-50/80 p-3.5 rounded-2xl border-2 border-purple-200 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-xs sm:text-sm text-purple-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-link"></i> 傳送專屬應援連結＆鼓勵小語給對方
+                        </span>
+                        <span class="text-[11px] bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-bold">對方打開會自動跳應援舞！</span>
+                    </div>
+
+                    <textarea id="share-text-area" rows="3" readonly class="w-full p-2.5 rounded-xl border-2 border-purple-200 bg-white text-slate-700 text-xs sm:text-sm font-bold focus:outline-none"></textarea>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="copyShareMessage()" class="btn-jelly flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>📋 一鍵複製鼓勵語＋專屬連結</span>
+                        </button>
+                        <button onclick="nativeShareLink()" class="btn-jelly py-2.5 px-4 rounded-xl bg-white hover:bg-purple-100 text-purple-700 font-black text-xs sm:text-sm border-2 border-purple-300 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-share-from-square"></i>
+                            <span>系統分享</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         彈窗 2：收禮者專屬驚喜歡迎卡片 (當網址帶有 ?name=xxx 時顯示)
+         ========================================================= -->
+    <div id="receiver-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/65 backdrop-blur-md p-4">
+        <div class="modal-animate bg-white max-w-md w-full rounded-[36px] border-4 border-amber-300 shadow-2xl p-6 text-center space-y-4 relative overflow-hidden">
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-pink-400 to-amber-300 mx-auto flex items-center justify-center text-4xl shadow-md animate-bounce">
+                💌
+            </div>
+            <div class="space-y-1">
+                <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 font-black text-xs">叮咚！專屬應援快遞送達</span>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-800 pt-1">
+                    給最棒的 <span id="receiver-name-title" class="text-pink-500 underline decoration-wavy decoration-amber-400">洋洋</span>
+                </h2>
+                <p id="receiver-praise-subtitle" class="text-xs sm:text-sm font-bold text-amber-600 bg-amber-50 py-1.5 px-3 rounded-xl inline-block border border-amber-200">
+                    🏅 榮獲：宇宙無敵好棒棒
+                </p>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                你的好友特地派出了「黃金小鴨、粉紅兔兔、奶茶小熊」啦啦隊，要為你獻上專屬應援組曲！你真的超棒棒喔！💖
+            </p>
+            <button onclick="acceptGiftAndPlay()" class="btn-jelly w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-black text-base tracking-wider shadow-lg border-2 border-white flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i>
+                <span>打開觀看我的專屬應援！</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================================
+         * 1. 全域狀態與應援曲目資料庫
+         * ========================================================= */
+        let currentName = "洋洋";
+        let currentPraise = "宇宙無敵好棒棒";
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isRecording = false;
+        let voiceEnabled = true;
+        let sfxEnabled = true;
+        let cheerCombo = 0;
+        let routineTimeouts = [];
+        let rhythmInterval = null;
+        let activePhraseText = "準備好為洋洋全力應援！";
+        let activePhraseIndex = -1;
+
+        // 舞台角色與動畫狀態 (直接繪製於高清 Canvas 以支援 100% 完整錄影)
+        const stageState = {
+            mode: 'idle',        // 'idle' | 'dance'
+            stunt: 'none',       // 'none' | 'toss' | 'pyramid' | 'spinjump'
+            stuntStartTime: 0,
+            disco: false,
+            happyEyes: false,
+            pokeOffsets: { left: 0, center: 0, right: 0 },
+            stamps: [],          // 畫面上的「好棒棒」印章特效
+            danmakus: [],        // 浮動彈幕
+            particles: []        // 彩帶、煙火、小鴨、愛心粒子
+        };
+
+        // 四首專屬應援曲目 (包含經典「洋洋要贏啦 洋洋好洋洋棒洋洋洋洋呱呱叫」與「好棒棒」鼓勵曲)
+        function getSongsData(name) {
+            const safeName = (name && name.trim() !== "") ? name.trim() : "洋洋";
+            return [
+                {
+                    title: "經典呱呱應援曲",
+                    phrases: [
+                        { text: `${safeName}要贏啦！`, action: "dance", fx: "confetti", sfx: "cheer" },
+                        { text: `${safeName}好！`, action: "spinjump", fx: "stars", sfx: "drum" },
+                        { text: `${safeName}棒！`, action: "spinjump", fx: "hearts", sfx: "drum" },
+                        { text: `${safeName}${safeName}呱呱叫！`, action: "toss", fx: "ducks", sfx: "quackDouble" },
+                        { text: `呱呱！${safeName}好棒棒🌟`, action: "pyramid", fx: "fireworks", sfx: "quackFanfare" }
+                    ]
+                },
+                {
+                    title: "超級好棒棒之歌",
+                    phrases: [
+                        { text: `${safeName}好棒棒！`, action: "spinjump", fx: "stamps", sfx: "cheer" },
+                        { text: `天天都發光✨`, action: "dance", fx: "stars", sfx: "drum" },
+                        { text: `無敵小可愛💖`, action: "toss", fx: "hearts", sfx: "whistle" },
+                        { text: `衝呀${safeName}拿第一！🏆`, action: "pyramid", fx: "fireworks", sfx: "fanfare" }
+                    ]
+                },
+                {
+                    title: "元氣滿滿應援曲",
+                    phrases: [
+                        { text: `加油加油${safeName}！`, action: "dance", fx: "confetti", sfx: "drum" },
+                        { text: `煩惱通通飛走啦🌈`, action: "toss", fx: "bubbles", sfx: "whistle" },
+                        { text: `幸運女神跟著${safeName}！`, action: "spinjump", fx: "stars", sfx: "cheer" },
+                        { text: `${safeName}超棒！耶！🎉`, action: "pyramid", fx: "fireworks", sfx: "fanfare" }
+                    ]
+                },
+                {
+                    title: "閃耀全場MVP",
+                    phrases: [
+                        { text: `全場看過來！👀`, action: "dance", fx: "stars", sfx: "whistle" },
+                        { text: `${safeName}最厲害！`, action: "spinjump", fx: "confetti", sfx: "drum" },
+                        { text: `顏值天花板👑`, action: "toss", fx: "hearts", sfx: "cheer" },
+                        { text: `${safeName}實力一百分💯`, action: "pyramid", fx: "fireworks", sfx: "fanfare" }
+                    ]
+                }
+            ];
+        }
+
+        /* =========================================================
+         * 2. Web Audio API 合成音效引擎 + 錄影專用音軌匯流排 (Audio Stream Bus)
+         * ========================================================= */
+        let audioCtx = null;
+        let masterGain = null;
+        let recordAudioDest = null; // 供 MediaRecorder 錄製合成音效與伴奏
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                    masterGain = audioCtx.createGain();
+                    masterGain.gain.value = 1.0;
+                    masterGain.connect(audioCtx.destination);
+
+                    // 建立可錄製的音訊串流節點
+                    if (audioCtx.createMediaStreamDestination) {
+                        recordAudioDest = audioCtx.createMediaStreamDestination();
+                        masterGain.connect(recordAudioDest);
+                    }
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function getAudioOutputNode() {
+            initAudio();
+            return masterGain || (audioCtx ? audioCtx.destination : null);
+        }
+
+        // 合成可愛「呱呱」鴨叫聲
+        function playQuackSound(pitchOffset = 0) {
+            if (!sfxEnabled) return;
+            const out = getAudioOutputNode();
+            if (!out) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(340 + pitchOffset, now);
+            osc.frequency.exponentialRampToValueAtTime(530 + pitchOffset, now + 0.07);
+            osc.frequency.exponentialRampToValueAtTime(260 + pitchOffset, now + 0.19);
+
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(850, now);
+            filter.frequency.linearRampToValueAtTime(1650, now + 0.08);
+            filter.frequency.linearRampToValueAtTime(700, now + 0.19);
+            filter.Q.value = 3.5;
+
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.35, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(out);
+
+            osc.start(now);
+            osc.stop(now + 0.21);
+        }
+
+        function playDoubleQuack() {
+            playQuackSound(0);
+            setTimeout(() => playQuackSound(50), 175);
+        }
+
+        // 合成啦啦隊哨子聲
+        function playWhistleSound() {
+            if (!sfxEnabled) return;
+            const out = getAudioOutputNode();
+            if (!out) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(2400, now);
+            osc.frequency.linearRampToValueAtTime(2950, now + 0.08);
+            osc.frequency.setValueAtTime(2650, now + 0.12);
+            osc.frequency.linearRampToValueAtTime(3150, now + 0.32);
+
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.22, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            osc.connect(gain);
+            gain.connect(out);
+
+            osc.start(now);
+            osc.stop(now + 0.36);
+        }
+
+        // 合成應援節奏鼓點與歡樂木琴伴奏音符
+        const melodyNotes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+        let beatStep = 0;
+
+        function playCheerBeat(isStrong = false) {
+            if (!sfxEnabled) return;
+            const out = getAudioOutputNode();
+            if (!out) return;
+
+            const now = audioCtx.currentTime;
+            // 低音應援鼓
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(isStrong ? 175 : 220, now);
+            osc.frequency.exponentialRampToValueAtTime(48, now + 0.14);
+
+            gain.gain.setValueAtTime(isStrong ? 0.36 : 0.22, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+            osc.connect(gain);
+            gain.connect(out);
+            osc.start(now);
+            osc.stop(now + 0.16);
+
+            // 輕快應援旋律音符 (讓錄製的影片擁有完整可愛配樂)
+            const noteOsc = audioCtx.createOscillator();
+            const noteGain = audioCtx.createGain();
+            noteOsc.type = 'sine';
+            const freq = melodyNotes[beatStep % melodyNotes.length];
+            beatStep++;
+            noteOsc.frequency.setValueAtTime(freq, now);
+
+            noteGain.gain.setValueAtTime(0.01, now);
+            noteGain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            noteOsc.connect(noteGain);
+            noteGain.connect(out);
+            noteOsc.start(now);
+            noteOsc.stop(now + 0.19);
+        }
+
+        // 合成勝利大合音 (Fanfare)
+        function playFanfareSound() {
+            if (!sfxEnabled) return;
+            const out = getAudioOutputNode();
+            if (!out) return;
+
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const now = audioCtx.currentTime + idx * 0.08;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.01, now);
+                gain.gain.linearRampToValueAtTime(0.25, now + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+
+                osc.connect(gain);
+                gain.connect(out);
+
+                osc.start(now);
+                osc.stop(now + 0.6);
+            });
+        }
+
+        function playHeartPopSound() {
+            if (!sfxEnabled) return;
+            const out = getAudioOutputNode();
+            if (!out) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.exponentialRampToValueAtTime(1320, now + 0.14);
+
+            gain.gain.setValueAtTime(0.24, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+            osc.connect(gain);
+            gain.connect(out);
+
+            osc.start(now);
+            osc.stop(now + 0.16);
+        }
+
+        /* =========================================================
+         * 3. Web Speech API 語音唱名系統
+         * ========================================================= */
+        function speakCheerPhrase(text) {
+            if (!voiceEnabled || !('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+                const utter = new SpeechSynthesisUtterance(cleanText);
+                utter.lang = 'zh-TW';
+                utter.pitch = 1.45;
+                utter.rate = 1.22;
+                utter.volume = 1.0;
+
+                const voices = window.speechSynthesis.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('cmn-Hant')) ||
+                                voices.find(v => v.lang.includes('zh'));
+                if (zhVoice) utter.voice = zhVoice;
+
+                window.speechSynthesis.speak(utter);
+            } catch (e) {
+                console.warn("Speech synthesis warning:", e);
+            }
+        }
+
+        /* =========================================================
+         * 4. 高解析度 Canvas 啦啦隊舞台渲染引擎 (支援 100% 畫面錄影)
+         * ========================================================= */
+        const stageCanvas = document.getElementById('stage-canvas');
+        const ctx = stageCanvas.getContext('2d');
+
+        // 輔助繪圖：圓角矩形
+        function drawRoundedRect(c, x, y, w, h, r) {
+            c.beginPath();
+            c.moveTo(x + r, y);
+            c.lineTo(x + w - r, y);
+            c.quadraticCurveTo(x + w, y, x + w, y + r);
+            c.lineTo(x + w, y + h - r);
+            c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            c.lineTo(x + r, y + h);
+            c.quadraticCurveTo(x, y + h, x, y + h - r);
+            c.lineTo(x, y + r);
+            c.quadraticCurveTo(x, y, x + r, y);
+            c.closePath();
+        }
+
+        // 繪製炫彩啦啦隊花球
+        function drawPomPom(c, x, y, radius, mainColor, subColor, time) {
+            c.save();
+            c.translate(x, y);
+            c.rotate(Math.sin(time * 0.015) * 0.35);
+
+            const blobs = [
+                { dx: 0, dy: 0, r: radius, col: mainColor },
+                { dx: -radius * 0.45, dy: -radius * 0.4, r: radius * 0.6, col: subColor },
+                { dx: radius * 0.45, dy: -radius * 0.35, r: radius * 0.6, col: '#fde047' },
+                { dx: -radius * 0.35, dy: radius * 0.45, r: radius * 0.6, col: '#ffffff' },
+                { dx: radius * 0.4, dy: radius * 0.4, r: radius * 0.55, col: mainColor }
+            ];
+            blobs.forEach(b => {
+                c.beginPath();
+                c.arc(b.dx, b.dy, b.r, 0, Math.PI * 2);
+                c.fillStyle = b.col;
+                c.fill();
+                c.lineWidth = 2;
+                c.strokeStyle = '#ffffff';
+                c.stroke();
+            });
+            c.restore();
+        }
+
+        // 繪製三隻 Q 版啦啦隊角色 (type: 'bunny' | 'duck' | 'bear')
+        function drawMascot(c, type, baseX, baseY, scale, time) {
+            c.save();
+
+            // 計算跳舞與特技位移
+            let dy = 0;
+            let dx = 0;
+            let rot = 0;
+            let scaleX = scale;
+            let scaleY = scale;
+
+            // 手動點擊彈跳回饋
+            const pokeKey = type === 'bunny' ? 'left' : (type === 'duck' ? 'center' : 'right');
+            if (stageState.pokeOffsets[pokeKey] > 0) {
+                dy -= stageState.pokeOffsets[pokeKey];
+                stageState.pokeOffsets[pokeKey] *= 0.85;
+                if (stageState.pokeOffsets[pokeKey] < 0.5) stageState.pokeOffsets[pokeKey] = 0;
+            }
+
+            // 一般待機呼吸與跳舞彈跳
+            if (stageState.mode === 'dance') {
+                const phase = type === 'duck' ? 0 : (type === 'bunny' ? 0.6 : 1.2);
+                const bounce = Math.abs(Math.sin(time * 0.0085 + phase));
+                dy -= bounce * 26;
+                rot = Math.sin(time * 0.0042 + phase) * 0.08;
+                scaleX = scale * (1 + (1 - bounce) * 0.04);
+                scaleY = scale * (1 - (1 - bounce) * 0.04);
+            } else {
+                dy -= Math.sin(time * 0.003 + (type === 'duck' ? 0 : 1)) * 4;
+            }
+
+            // 絢麗特技動作計算
+            const stuntElapsed = time - stageState.stuntStartTime;
+            if (stageState.stunt === 'toss' && stuntElapsed < 1500) {
+                const p = stuntElapsed / 1500;
+                if (type === 'duck') {
+                    // C位黃金小鴨高空拋接 720 度旋轉
+                    dy -= Math.sin(p * Math.PI) * 145;
+                    rot += p * Math.PI * 4;
+                    scaleX = scale * (1 + Math.sin(p * Math.PI) * 0.18);
+                    scaleY = scaleX;
+                } else if (type === 'bunny') {
+                    dx += Math.sin(p * Math.PI) * 38;
+                    rot += Math.sin(p * Math.PI) * 0.18;
+                } else if (type === 'bear') {
+                    dx -= Math.sin(p * Math.PI) * 38;
+                    rot -= Math.sin(p * Math.PI) * 0.18;
+                }
+            } else if (stageState.stunt === 'pyramid' && stuntElapsed < 1600) {
+                const p = Math.min(1, Math.sin((stuntElapsed / 1600) * Math.PI) * 1.3);
+                if (type === 'duck') {
+                    dy -= p * 96;
+                    scaleX = scale * (1 + p * 0.12);
+                    scaleY = scaleX;
+                } else if (type === 'bunny') {
+                    dx += p * 56;
+                    rot -= p * 0.1;
+                } else if (type === 'bear') {
+                    dx -= p * 56;
+                    rot += p * 0.1;
+                }
+            } else if (stageState.stunt === 'spinjump' && stuntElapsed < 1000) {
+                const p = stuntElapsed / 1000;
+                dy -= Math.sin(p * Math.PI) * 85;
+                rot += p * Math.PI * 2;
+            }
+
+            // 地面陰影
+            c.beginPath();
+            c.ellipse(baseX + dx, baseY + 6, Math.max(18, 46 * scale + dy * 0.15), 10 * scale, 0, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(0, 0, 0, 0.12)';
+            c.fill();
+
+            c.translate(baseX + dx, baseY + dy);
+            c.rotate(rot);
+            c.scale(scaleX, scaleY);
+
+            // 主題色設定
+            const bodyColor = type === 'duck' ? '#fde047' : (type === 'bunny' ? '#fbcfe8' : '#d97706');
+            const strokeColor = type === 'duck' ? '#eab308' : (type === 'bunny' ? '#f472b6' : '#b45309');
+            const skirtColor = type === 'duck' ? '#3b82f6' : (type === 'bunny' ? '#ec4899' : '#a855f7');
+
+            // 1. 耳朵或頭飾
+            if (type === 'bunny') {
+                // 長兔耳
+                [-24, 24].forEach((ex, i) => {
+                    c.save();
+                    c.translate(ex, -135);
+                    c.rotate((i === 0 ? -0.18 : 0.18) + Math.sin(time * 0.008) * 0.08);
+                    drawRoundedRect(c, -11, -55, 22, 62, 11);
+                    c.fillStyle = bodyColor;
+                    c.fill();
+                    c.lineWidth = 3;
+                    c.strokeStyle = strokeColor;
+                    c.stroke();
+
+                    drawRoundedRect(c, -6, -45, 12, 42, 6);
+                    c.fillStyle = '#f472b6';
+                    c.fill();
+                    c.restore();
+                });
+            } else if (type === 'bear') {
+                // 圓熊耳
+                [-36, 36].forEach(ex => {
+                    c.beginPath();
+                    c.arc(ex, -138, 17, 0, Math.PI * 2);
+                    c.fillStyle = bodyColor;
+                    c.fill();
+                    c.lineWidth = 3;
+                    c.strokeStyle = strokeColor;
+                    c.stroke();
+
+                    c.beginPath();
+                    c.arc(ex, -138, 8.5, 0, Math.PI * 2);
+                    c.fillStyle = '#fde68a';
+                    c.fill();
+                });
+            } else if (type === 'duck') {
+                // 小鴨呆毛與紅色蝴蝶結
+                c.beginPath();
+                c.moveTo(0, -150);
+                c.quadraticCurveTo(-8, -172, 6, -166);
+                c.quadraticCurveTo(14, -176, 15, -154);
+                c.lineWidth = 4;
+                c.strokeStyle = strokeColor;
+                c.stroke();
+
+                c.save();
+                c.translate(0, -150);
+                c.fillStyle = '#f43f5e';
+                c.beginPath();
+                c.moveTo(0, 0);
+                c.lineTo(-18, -10);
+                c.lineTo(-18, 10);
+                c.closePath();
+                c.fill();
+                c.beginPath();
+                c.moveTo(0, 0);
+                c.lineTo(18, -10);
+                c.lineTo(18, 10);
+                c.closePath();
+                c.fill();
+                c.beginPath();
+                c.arc(0, 0, 5, 0, Math.PI * 2);
+                c.fillStyle = '#fbbf24';
+                c.fill();
+                c.restore();
+            }
+
+            // 2. 雙腳
+            [-20, 20].forEach(fx => {
+                c.beginPath();
+                c.ellipse(fx, -8, 14, 9, 0, 0, Math.PI * 2);
+                c.fillStyle = type === 'duck' ? '#f97316' : bodyColor;
+                c.fill();
+                c.lineWidth = 2.5;
+                c.strokeStyle = type === 'duck' ? '#ea580c' : strokeColor;
+                c.stroke();
+            });
+
+            // 3. 身體與啦啦隊服
+            c.beginPath();
+            c.ellipse(0, -48, 40, 38, 0, 0, Math.PI * 2);
+            c.fillStyle = bodyColor;
+            c.fill();
+            c.lineWidth = 3;
+            c.strokeStyle = strokeColor;
+            c.stroke();
+
+            // 百褶裙
+            c.beginPath();
+            c.moveTo(-39, -46);
+            c.lineTo(39, -46);
+            c.lineTo(47, -20);
+            c.quadraticCurveTo(0, -10, -47, -20);
+            c.closePath();
+            c.fillStyle = skirtColor;
+            c.fill();
+            c.lineWidth = 2.5;
+            c.strokeStyle = '#ffffff';
+            c.stroke();
+
+            // 啦啦隊上衣
+            c.beginPath();
+            c.moveTo(-41, -70);
+            c.lineTo(41, -70);
+            c.lineTo(39, -42);
+            c.quadraticCurveTo(0, -34, -39, -42);
+            c.closePath();
+            c.fillStyle = '#ffffff';
+            c.fill();
+            c.lineWidth = 2.5;
+            c.strokeStyle = skirtColor;
+            c.stroke();
+
+            // 胸前圖案 (愛心或星星)
+            c.font = 'bold 18px sans-serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText(type === 'duck' ? '💖' : (type === 'bunny' ? '⭐' : '⚡'), 0, -54);
+
+            // 4. 圓滾滾頭部
+            c.beginPath();
+            c.ellipse(0, -106, 47, 41, 0, 0, Math.PI * 2);
+            c.fillStyle = bodyColor;
+            c.fill();
+            c.lineWidth = 3;
+            c.strokeStyle = strokeColor;
+            c.stroke();
+
+            // 腮紅
+            [-32, 32].forEach(bx => {
+                c.beginPath();
+                c.ellipse(bx, -98, 9, 5.5, 0, 0, Math.PI * 2);
+                c.fillStyle = 'rgba(244, 63, 94, 0.48)';
+                c.fill();
+            });
+
+            // 5. 眼睛 (支援眨眼與笑瞇瞇眼神)
+            const isBlinking = (time % 3800) > 3620;
+            if (stageState.happyEyes || stageState.mode === 'dance') {
+                // 笑瞇瞇彎月眼
+                [-21, 21].forEach(ex => {
+                    c.beginPath();
+                    c.arc(ex, -108, 8, Math.PI * 1.15, Math.PI * 1.85);
+                    c.lineWidth = 4;
+                    c.lineCap = 'round';
+                    c.strokeStyle = '#1e293b';
+                    c.stroke();
+                });
+            } else if (isBlinking) {
+                [-21, 21].forEach(ex => {
+                    c.beginPath();
+                    c.moveTo(ex - 7, -110);
+                    c.lineTo(ex + 7, -110);
+                    c.lineWidth = 3.5;
+                    c.strokeStyle = '#1e293b';
+                    c.stroke();
+                });
+            } else {
+                [-21, 21].forEach(ex => {
+                    c.beginPath();
+                    c.arc(ex, -110, 7, 0, Math.PI * 2);
+                    c.fillStyle = '#1e293b';
+                    c.fill();
+                    c.beginPath();
+                    c.arc(ex - 2.5, -112.5, 2.6, 0, Math.PI * 2);
+                    c.fillStyle = '#ffffff';
+                    c.fill();
+                });
+            }
+
+            // 6. 嘴巴與鼻子
+            if (type === 'duck') {
+                c.beginPath();
+                c.ellipse(0, -96, 17, 9.5, 0, 0, Math.PI * 2);
+                c.fillStyle = '#f97316';
+                c.fill();
+                c.lineWidth = 2;
+                c.strokeStyle = '#ea580c';
+                c.stroke();
+
+                c.beginPath();
+                c.arc(0, -97, 8, 0.15 * Math.PI, 0.85 * Math.PI);
+                c.lineWidth = 2.2;
+                c.strokeStyle = '#7c2d12';
+                c.stroke();
+            } else if (type === 'bear') {
+                c.beginPath();
+                c.ellipse(0, -95, 13, 9.5, 0, 0, Math.PI * 2);
+                c.fillStyle = '#fef3c7';
+                c.fill();
+                c.beginPath();
+                c.ellipse(0, -98, 4.5, 3, 0, 0, Math.PI * 2);
+                c.fillStyle = '#451a03';
+                c.fill();
+            } else {
+                c.beginPath();
+                c.ellipse(0, -99, 4, 3, 0, 0, Math.PI * 2);
+                c.fillStyle = '#ec4899';
+                c.fill();
+                c.beginPath();
+                c.arc(0, -96, 6, 0.15 * Math.PI, 0.85 * Math.PI);
+                c.lineWidth = 2.2;
+                c.strokeStyle = '#334155';
+                c.stroke();
+            }
+
+            // 7. 揮舞的雙手與大彩球
+            const armWaveSpeed = stageState.mode === 'dance' ? 0.016 : 0.005;
+            const armAmp = stageState.mode === 'dance' ? 0.68 : 0.22;
+            const leftAngle = Math.sin(time * armWaveSpeed) * armAmp;
+            const rightAngle = -Math.sin(time * armWaveSpeed) * armAmp;
+
+            const pomMain = type === 'duck' ? '#f43f5e' : (type === 'bunny' ? '#38bdf8' : '#a855f7');
+            const pomSub = type === 'duck' ? '#fb7185' : (type === 'bunny' ? '#7dd3fc' : '#d8b4fe');
+
+            // 左手
+            c.save();
+            c.translate(-38, -62);
+            c.rotate(leftAngle);
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.quadraticCurveTo(-24, -18, -36, -38);
+            c.lineWidth = 14;
+            c.lineCap = 'round';
+            c.strokeStyle = bodyColor;
+            c.stroke();
+            drawPomPom(c, -40, -44, type === 'duck' ? 21 : 17, pomMain, pomSub, time);
+            c.restore();
+
+            // 右手
+            c.save();
+            c.translate(38, -62);
+            c.rotate(rightAngle);
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.quadraticCurveTo(24, -18, 36, -38);
+            c.lineWidth = 14;
+            c.lineCap = 'round';
+            c.strokeStyle = bodyColor;
+            c.stroke();
+            drawPomPom(c, 40, -44, type === 'duck' ? 21 : 17, pomMain, pomSub, time);
+            c.restore();
+
+            c.restore();
+        }
+
+        // 主舞台每一幀完整渲染 (背景、彩旗、探照燈、橫幅、3隻角色、粒子、彈幕、卡拉OK歌詞)
+        function renderStageLoop(timestamp) {
+            const w = stageCanvas.width;
+            const h = stageCanvas.height;
+
+            // 1. 漸層舞台背景與地板
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+            if (stageState.disco && Math.floor(timestamp / 220) % 2 === 0) {
+                bgGrad.addColorStop(0, '#c4b5fd');
+                bgGrad.addColorStop(0.68, '#fbcfe8');
+            } else {
+                bgGrad.addColorStop(0, '#a5f3fc');
+                bgGrad.addColorStop(0.68, '#fbcfe8');
+            }
+            bgGrad.addColorStop(0.685, '#facc15');
+            bgGrad.addColorStop(1, '#fef08a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 舞台木紋地板裝飾線
+            ctx.strokeStyle = 'rgba(234, 179, 8, 0.35)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.685);
+            ctx.lineTo(w, h * 0.685);
+            ctx.stroke();
+
+            // 2. 搖擺探照燈光束
+            [w * 0.22, w * 0.78].forEach((lx, i) => {
+                ctx.save();
+                ctx.translate(lx, -20);
+                const angle = Math.sin(timestamp * 0.002 + i * 2) * 0.35;
+                ctx.rotate(angle);
+                const lightGrad = ctx.createLinearGradient(0, 0, 0, h * 0.85);
+                lightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+                lightGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = lightGrad;
+                ctx.beginPath();
+                ctx.moveTo(-35, 0);
+                ctx.lineTo(35, 0);
+                ctx.lineTo(130, h * 0.85);
+                ctx.lineTo(-130, h * 0.85);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 3. 頂部繽紛三角彩旗
+            const flagColors = ['#f43f5e', '#fbbf24', '#38bdf8', '#a855f7', '#4ade80', '#f472b6'];
+            const flagCount = 16;
+            const flagW = w / flagCount;
+            for (let i = 0; i < flagCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * flagW, 0);
+                ctx.lineTo((i + 1) * flagW, 0);
+                ctx.lineTo((i + 0.5) * flagW, 30);
+                ctx.closePath();
+                ctx.fillStyle = flagColors[i % flagColors.length];
+                ctx.fill();
+            }
+
+            // 4. 頂部應援主橫幅與「好棒棒」稱號
+            ctx.save();
+            drawRoundedRect(ctx, w / 2 - 265, 22, 530, 48, 24);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#fbbf24';
+            ctx.stroke();
+
+            ctx.font = '900 21px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ec4899';
+            ctx.fillText(`📣 全場為【${currentName}】熱烈應援 ★ ${currentPraise} 🎉`, w / 2, 46);
+            ctx.restore();
+
+            // 5. 繪製三隻啦啦隊員 (先畫左右隊員，最後畫C位小鴨隊長確保圖層在最前)
+            drawMascot(ctx, 'bunny', w * 0.27, 345, 0.92, timestamp);
+            drawMascot(ctx, 'bear', w * 0.73, 345, 0.92, timestamp);
+            drawMascot(ctx, 'duck', w * 0.50, 355, 1.06, timestamp);
+
+            // 6. 繪製粒子特效 (彩帶、煙火、小鴨、星星、愛心)
+            for (let i = stageState.particles.length - 1; i >= 0; i--) {
+                const p = stageState.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.18;
+                p.rotation += p.vRot;
+                p.alpha -= 0.013;
+
+                if (p.alpha <= 0) {
+                    stageState.particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+
+                if (p.type === 'ducks' || p.type === 'hearts' || p.type === 'stars' || p.type === 'stamps') {
+                    ctx.font = `${Math.round(p.size + 8)}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const emoji = p.type === 'ducks' ? '🐥' : (p.type === 'hearts' ? '💖' : (p.type === 'stamps' ? '👍' : '⭐'));
+                    ctx.fillText(emoji, 0, 0);
+                } else if (p.type === 'bubbles') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size * 0.6, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size * 0.45, -p.size * 0.25, p.size * 0.9, p.size * 0.5);
+                }
+                ctx.restore();
+            }
+
+            // 7. 繪製浮動彈幕 (錄進影片裡)
+            for (let i = stageState.danmakus.length - 1; i >= 0; i--) {
+                const dm = stageState.danmakus[i];
+                dm.y -= dm.vy;
+                dm.alpha -= 0.008;
+                if (dm.alpha <= 0) {
+                    stageState.danmakus.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, dm.alpha);
+                ctx.font = '900 18px "M PLUS Rounded 1c", sans-serif';
+                const textW = ctx.measureText(dm.text).width + 26;
+                drawRoundedRect(ctx, dm.x - textW / 2, dm.y - 16, textW, 32, 16);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = dm.color;
+                ctx.stroke();
+
+                ctx.fillStyle = dm.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(dm.text, dm.x, dm.y);
+                ctx.restore();
+            }
+
+            // 8. 舞台底部卡拉 OK 大字幕板 (同步錄進影片)
+            ctx.save();
+            drawRoundedRect(ctx, 40, h - 76, w - 80, 62, 20);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+            ctx.fill();
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = '#f472b6';
+            ctx.stroke();
+
+            // 當前大字幕
+            ctx.font = '900 28px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = isPlaying ? '#db2777' : '#334155';
+            ctx.fillText(activePhraseText, w / 2, h - 45);
+            ctx.restore();
+
+            requestAnimationFrame(renderStageLoop);
+        }
+
+        // 點擊 Canvas 舞台上的角色觸發互動
+        stageCanvas.addEventListener('click', (e) => {
+            const rect = stageCanvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) * (stageCanvas.width / rect.width);
+            if (clickX < stageCanvas.width * 0.37) {
+                pokeMascot('left', `🐰 兔兔為${currentName}跳跳！好棒棒！`);
+            } else if (clickX > stageCanvas.width * 0.63) {
+                pokeMascot('right', `🐻 小熊給${currentName}滿滿力量！`);
+            } else {
+                pokeMascot('center', `🦆 呱呱！${currentName}要贏啦！`);
+            }
+        });
+
+        /* =========================================================
+         * 5. 🎬 舞台影片錄製引擎 (MediaRecorder + Canvas Stream + Audio Track)
+         * ========================================================= */
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordedBlobUrl = null;
+        let recordedBlob = null;
+        let recordedMimeType = 'video/webm';
+        let recTimerInterval = null;
+        let recSeconds = 0;
+
+        function startCheerWithRecording() {
+            if (isRecording) {
+                // 若正在錄影，點擊則提前完成並儲存
+                stopRoutinePlay(true);
+                return;
+            }
+            if (isPlaying) {
+                stopRoutinePlay(false);
+            }
+
+            initAudio();
+
+            // 嘗試啟動 Canvas 30FPS 錄影串流 + Web Audio 合成音軌
+            try {
+                const canvasStream = stageCanvas.captureStream ? stageCanvas.captureStream(30) : null;
+                if (!canvasStream || typeof MediaRecorder === 'undefined') {
+                    showToast('⚠️ 您的瀏覽器不支援直接錄影，將為您播放應援並開啟獎狀分享！', '🎬');
+                    toggleRoutinePlay(false);
+                    return;
+                }
+
+                const combinedTracks = [...canvasStream.getVideoTracks()];
+                if (recordAudioDest && recordAudioDest.stream.getAudioTracks().length > 0) {
+                    combinedTracks.push(...recordAudioDest.stream.getAudioTracks());
+                }
+                const combinedStream = new MediaStream(combinedTracks);
+
+                // 偵測最佳可用影片格式
+                const mimeCandidates = [
+                    'video/mp4',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
+                    'video/webm'
+                ];
+                recordedMimeType = mimeCandidates.find(type => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) || '';
+
+                recordedChunks = [];
+                mediaRecorder = recordedMimeType
+                    ? new MediaRecorder(combinedStream, { mimeType: recordedMimeType })
+                    : new MediaRecorder(combinedStream);
+
+                mediaRecorder.ondataavailable = (ev) => {
+                    if (ev.data && ev.data.size > 0) {
+                        recordedChunks.push(ev.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const finalType = mediaRecorder.mimeType || recordedMimeType || 'video/webm';
+                    recordedBlob = new Blob(recordedChunks, { type: finalType });
+                    if (recordedBlobUrl) URL.revokeObjectURL(recordedBlobUrl);
+                    recordedBlobUrl = URL.createObjectURL(recordedBlob);
+
+                    // 綁定至彈窗內的預覽播放器
+                    const videoEl = document.getElementById('recorded-video');
+                    videoEl.src = recordedBlobUrl;
+                    document.getElementById('video-player-wrap').classList.remove('hidden');
+                    document.getElementById('video-player-wrap').classList.add('flex');
+                    document.getElementById('no-video-hint').classList.add('hidden');
+
+                    const reopenBtn = document.getElementById('btn-reopen-modal');
+                    reopenBtn.classList.remove('hidden');
+                    reopenBtn.classList.add('flex');
+
+                    showToast(`🎉 【${currentName}】專屬應援影片錄製完成！`, '🎬');
+                    openShareModal();
+                };
+
+                mediaRecorder.start(200);
+                isRecording = true;
+
+                // 顯示錄影計時紅點與改變按鈕外觀
+                recSeconds = 0;
+                const recBadge = document.getElementById('rec-badge');
+                recBadge.classList.remove('hidden');
+                recBadge.classList.add('flex');
+                document.getElementById('rec-timer').textContent = 'REC 00:00';
+
+                recTimerInterval = setInterval(() => {
+                    recSeconds++;
+                    const secStr = String(recSeconds).padStart(2, '0');
+                    document.getElementById('rec-timer').textContent = `REC 00:${secStr}`;
+                }, 1000);
+
+                const recBtn = document.getElementById('btn-record-play');
+                recBtn.className = "btn-jelly flex-1 md:flex-initial px-4 py-2 rounded-2xl bg-rose-600 text-white font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-1.5 border-2 border-white shadow-md";
+                document.getElementById('record-icon').className = "fa-solid fa-stop rec-dot";
+                document.getElementById('record-text').textContent = "⏹️ 完成錄影並看影片";
+
+                // 開始執行完整應援表演
+                startRoutinePlay();
+            } catch (err) {
+                console.warn("MediaRecorder fallback:", err);
+                showToast('🎬 已啟動應援表演！結束後可下載好棒棒獎狀與分享連結！');
+                startRoutinePlay();
+            }
+        }
+
+        function finishRecordingIfActive() {
+            if (recTimerInterval) {
+                clearInterval(recTimerInterval);
+                recTimerInterval = null;
+            }
+            const recBadge = document.getElementById('rec-badge');
+            recBadge.classList.add('hidden');
+            recBadge.classList.remove('flex');
+
+            const recBtn = document.getElementById('btn-record-play');
+            recBtn.className = "btn-jelly flex-1 md:flex-initial px-4 py-2 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-1.5 border-2 border-white shadow-md";
+            document.getElementById('record-icon').className = "fa-solid fa-circle-dot";
+            document.getElementById('record-text').textContent = "🎬 重新錄製應援影片";
+
+            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                isRecording = false;
+                try {
+                    mediaRecorder.stop();
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
+        }
+
+        // 下載錄製完成的應援影片
+        function downloadRecordedVideo() {
+            if (!recordedBlobUrl) {
+                showToast('請先點擊「開始應援並自動錄影」喔！', '💡');
+                return;
+            }
+            const ext = (recordedBlob && recordedBlob.type.includes('mp4')) ? 'mp4' : 'webm';
+            const a = document.createElement('a');
+            a.href = recordedBlobUrl;
+            a.download = `${currentName}_好棒棒專屬應援.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast(`📥 已開始下載【${currentName}_好棒棒專屬應援.${ext}】！`, '💖');
+        }
+
+        // 系統原生分享影片檔 (支援手機 LINE / IG / AirDrop 等)
+        async function nativeShareVideo() {
+            if (!recordedBlob) {
+                nativeShareLink();
+                return;
+            }
+            const ext = recordedBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            const file = new File([recordedBlob], `${currentName}_好棒棒專屬應援.${ext}`, { type: recordedBlob.type });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: `送給【${currentName}】的專屬啦啦隊應援！`,
+                        text: document.getElementById('share-text-area').value,
+                        files: [file]
+                    });
+                    showToast('🎉 成功喚起分享選單！');
+                    return;
+                } catch (err) {
+                    if (err.name !== 'AbortError') nativeShareLink();
+                }
+            } else {
+                nativeShareLink();
+            }
+        }
+
+        /* =========================================================
+         * 6. 📸 產生並下載「宇宙無敵好棒棒」認證獎狀 PNG 圖卡
+         * ========================================================= */
+        function downloadCertificatePNG() {
+            initAudio();
+            playFanfareSound();
+            spawnParticles('stars', 30);
+
+            // 建立高解析度獎狀合成畫布
+            const certCanvas = document.createElement('canvas');
+            certCanvas.width = 960;
+            certCanvas.height = 680;
+            const c = certCanvas.getContext('2d');
+
+            // 獎狀外框與粉嫩背景
+            const grad = c.createLinearGradient(0, 0, 960, 680);
+            grad.addColorStop(0, '#fff1f2');
+            grad.addColorStop(0.5, '#fefce8');
+            grad.addColorStop(1, '#f0f9ff');
+            c.fillStyle = grad;
+            c.fillRect(0, 0, 960, 680);
+
+            // 雙層華麗金邊框
+            drawRoundedRect(c, 22, 22, 916, 636, 32);
+            c.lineWidth = 10;
+            c.strokeStyle = '#f472b6';
+            c.stroke();
+
+            drawRoundedRect(c, 36, 36, 888, 608, 24);
+            c.lineWidth = 4;
+            c.strokeStyle = '#fbbf24';
+            c.stroke();
+
+            // 頂部標題
+            c.font = '900 38px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            c.fillStyle = '#db2777';
+            c.textAlign = 'center';
+            c.fillText(`🏆 萌萌啦啦隊 ★ 專屬好棒棒認證卡 🏆`, 480, 92);
+
+            // 主角名字與稱號
+            c.font = '900 28px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            c.fillStyle = '#334155';
+            c.fillText(`茲證明 最閃耀的主角：【 ${currentName} 】`, 480, 145);
+
+            c.font = '900 26px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            c.fillStyle = '#d97706';
+            c.fillText(`榮獲「${currentPraise}」最高榮譽應援！`, 480, 188);
+
+            // 將目前舞台快照嵌入獎狀中央
+            c.save();
+            drawRoundedRect(c, 90, 212, 780, 365, 22);
+            c.clip();
+            c.drawImage(stageCanvas, 0, 0, stageCanvas.width, stageCanvas.height, 90, 212, 780, 365);
+            c.restore();
+
+            drawRoundedRect(c, 90, 212, 780, 365, 22);
+            c.lineWidth = 5;
+            c.strokeStyle = '#ffffff';
+            c.stroke();
+
+            // 右下角紅色「好棒棒認證」印章
+            c.save();
+            c.translate(800, 520);
+            c.rotate(-0.2);
+            c.beginPath();
+            c.arc(0, 0, 58, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(244, 63, 94, 0.9)';
+            c.fill();
+            c.lineWidth = 4;
+            c.strokeStyle = '#ffffff';
+            c.stroke();
+            c.font = '900 22px "M PLUS Rounded 1c", sans-serif';
+            c.fillStyle = '#ffffff';
+            c.textAlign = 'center';
+            c.fillText('好棒棒', 0, -8);
+            c.fillText('100分👍', 0, 20);
+            c.restore();
+
+            // 底部應援歌詞簽名
+            const songs = getSongsData(currentName);
+            const lyricLine = songs[currentSongIndex].phrases.map(p => p.text).join(' ');
+            c.font = '800 20px "M PLUS Rounded 1c", "PingFang TC", sans-serif';
+            c.fillStyle = '#ec4899';
+            c.textAlign = 'center';
+            c.fillText(`♪ 專屬應援歌：${lyricLine}`, 480, 618);
+
+            // 觸發 PNG 下載
+            const dataUrl = certCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `${currentName}_好棒棒應援獎狀.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            showToast(`📸 已下載【${currentName}_好棒棒應援獎狀.png】！快傳給好友鼓勵他！`, '🏆');
+        }
+
+        /* =========================================================
+         * 7. 🔗 專屬分享連結產生器與收禮者自動播放模式
+         * ========================================================= */
+        function getShareUrl() {
+            const baseUrl = window.location.href.split('?')[0];
+            const params = new URLSearchParams();
+            params.set('name', currentName);
+            params.set('song', String(currentSongIndex));
+            params.set('praise', currentPraise);
+            params.set('gift', '1');
+            return `${baseUrl}?${params.toString()}`;
+        }
+
+        function updateShareTextContent() {
+            const songs = getSongsData(currentName);
+            const songLyrics = songs[currentSongIndex].phrases.map(p => p.text).join(' ');
+            const shareUrl = getShareUrl();
+            const message = `📣 叮咚！我派了一支超萌啦啦隊為【${currentName}】全力應援：\n「${songLyrics}」\n🏅 頒發給你：【${currentPraise}】認證！你真的超棒棒喔💖\n👇 點擊連結看你的專屬啦啦隊表演：\n${shareUrl}`;
+            const area = document.getElementById('share-text-area');
+            if (area) area.value = message;
+        }
+
+        function openShareModal() {
+            updateShareTextContent();
+            document.getElementById('modal-title-text').textContent = `為【${currentName}】專屬應援完成！送給他大大的好棒棒！`;
+            const modal = document.getElementById('share-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('share-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyShareMessage() {
+            updateShareTextContent();
+            const area = document.getElementById('share-text-area');
+            area.select();
+            area.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                playHeartPopSound();
+                showToast('📋 已複製鼓勵訊息＋專屬應援連結！快貼給好友吧！', '💖');
+            } catch (err) {
+                showToast('請長按文字框複製分享訊息喔！', '💡');
+            }
+        }
+
+        async function nativeShareLink() {
+            updateShareTextContent();
+            const text = document.getElementById('share-text-area').value;
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `給【${currentName}】的專屬啦啦隊應援！`,
+                        text: text,
+                        url: getShareUrl()
+                    });
+                } catch (e) {
+                    if (e.name !== 'AbortError') copyShareMessage();
+                }
+            } else {
+                copyShareMessage();
+            }
+        }
+
+        function showToast(msg, icon = '💖') {
+            const toast = document.getElementById('toast-msg');
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0', '-translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-3');
+            }, 3200);
+        }
+
+        /* =========================================================
+         * 8. 畫面互動與應援曲流程控制
+         * ========================================================= */
+        function handleNameChange(val) {
+            currentName = val.trim() || "洋洋";
+            const songs = getSongsData(currentName);
+            activePhraseText = songs[currentSongIndex].phrases[0].text;
+            updateShareTextContent();
+        }
+
+        function handlePraiseChange(val) {
+            currentPraise = val;
+            playHeartPopSound();
+            spawnDanmaku(`🏅 頒發稱號：${val}！`, '#d97706');
+            spawnParticles('stamps', 15);
+            updateShareTextContent();
+        }
+
+        function setQuickName(name) {
+            const input = document.getElementById('input-name');
+            input.value = name;
+            handleNameChange(name);
+            playHeartPopSound();
+            spawnDanmaku(`✨ 歡迎主角：${name}！好棒棒！`, '#ec4899');
+            spawnParticles('stars', 18);
+            if (!isPlaying) {
+                startRoutinePlay();
+            }
+        }
+
+        function selectSong(index, autoStart = true) {
+            currentSongIndex = index;
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`song-btn-${i}`);
+                if (i === index) {
+                    btn.className = "song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-amber-400 bg-amber-300 text-amber-950";
+                } else {
+                    btn.className = "song-tab btn-jelly px-2.5 py-2 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-1 border-2 border-pink-200 bg-white text-slate-600";
+                }
+            }
+            const songs = getSongsData(currentName);
+            activePhraseText = songs[currentSongIndex].phrases[0].text;
+            updateShareTextContent();
+
+            if (autoStart) {
+                playHeartPopSound();
+                if (isPlaying) {
+                    stopRoutinePlay(false);
+                }
+                startRoutinePlay();
+            }
+        }
+
+        function toggleRoutinePlay() {
+            if (isPlaying) {
+                stopRoutinePlay(false);
+            } else {
+                startRoutinePlay();
+            }
+        }
+
+        function startRoutinePlay() {
+            initAudio();
+            clearRoutineTimers();
+            isPlaying = true;
+            beatStep = 0;
+
+            // 更新純播放按鈕視覺
+            const btn = document.getElementById('btn-main-play');
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            icon.className = "fa-solid fa-stop";
+            text.textContent = "停止";
+
+            stageState.mode = 'dance';
+            stageState.happyEyes = true;
+            stageState.disco = true;
+
+            const songs = getSongsData(currentName);
+            const currentSong = songs[currentSongIndex];
+
+            // 背景節奏鼓點與伴奏旋律
+            rhythmInterval = setInterval(() => {
+                playCheerBeat(false);
+            }, 380);
+
+            const phraseDuration = 1650;
+            currentSong.phrases.forEach((phrase, idx) => {
+                const timer = setTimeout(() => {
+                    if (!isPlaying) return;
+
+                    activePhraseIndex = idx;
+                    activePhraseText = phrase.text;
+
+                    speakCheerPhrase(phrase.text);
+                    spawnDanmaku(phrase.text, idx % 2 === 0 ? '#ec4899' : '#8b5cf6');
+
+                    if (phrase.sfx === 'quackDouble') playDoubleQuack();
+                    else if (phrase.sfx === 'quackFanfare') { playDoubleQuack(); setTimeout(playFanfareSound, 240); }
+                    else if (phrase.sfx === 'whistle') playWhistleSound();
+                    else if (phrase.sfx === 'fanfare') playFanfareSound();
+                    else if (phrase.sfx === 'cheer') { playCheerBeat(true); playHeartPopSound(); }
+                    else playCheerBeat(true);
+
+                    spawnParticles(phrase.fx, phrase.fx === 'fireworks' ? 55 : 28);
+                    performActionClass(phrase.action);
+                    addCombo(5);
+                }, idx * phraseDuration);
+
+                routineTimeouts.push(timer);
+            });
+
+            // 歌曲結束收尾
+            const endTimer = setTimeout(() => {
+                stopRoutinePlay(true);
+            }, currentSong.phrases.length * phraseDuration + 650);
+            routineTimeouts.push(endTimer);
+        }
+
+        function stopRoutinePlay(naturalEnd = false) {
+            isPlaying = false;
+            clearRoutineTimers();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            icon.className = "fa-solid fa-play";
+            text.textContent = "純播放";
+
+            stageState.mode = 'idle';
+            stageState.happyEyes = false;
+            stageState.disco = false;
+            stageState.stunt = 'none';
+
+            if (naturalEnd) {
+                activePhraseText = `🎉 ${currentName}好棒棒！應援大成功！`;
+            }
+
+            // 如果正在錄影中，結束表演時自動完成錄影並彈出分享與下載視窗
+            if (isRecording) {
+                finishRecordingIfActive();
+            }
+        }
+
+        function clearRoutineTimers() {
+            routineTimeouts.forEach(t => clearTimeout(t));
+            routineTimeouts = [];
+            if (rhythmInterval) {
+                clearInterval(rhythmInterval);
+                rhythmInterval = null;
+            }
+        }
+
+        function performActionClass(actionType) {
+            if (actionType === 'toss' || actionType === 'pyramid' || actionType === 'spinjump') {
+                stageState.stunt = actionType;
+                stageState.stuntStartTime = performance.now();
+            } else {
+                stageState.stunt = 'none';
+            }
+        }
+
+        // 點擊下方「絢麗特技」按鈕
+        function triggerStunt(stuntName) {
+            initAudio();
+            stageState.happyEyes = true;
+
+            if (stuntName === 'toss') {
+                performActionClass('toss');
+                playWhistleSound();
+                setTimeout(playDoubleQuack, 220);
+                spawnParticles('stars', 35);
+                activePhraseText = `🌪️ ${currentName}專屬！空中360度大迴旋！`;
+                spawnDanmaku(`🌪️ ${currentName}飛高高！太神啦！`, '#0284c7');
+                speakCheerPhrase(`${currentName}飛高高！好棒棒！`);
+            } else if (stuntName === 'pyramid') {
+                performActionClass('pyramid');
+                playFanfareSound();
+                spawnParticles('hearts', 40);
+                activePhraseText = `🏰 無敵愛心金字塔合體！${currentName}必勝！`;
+                spawnDanmaku(`🏰 愛心金字塔！${currentName}第一名！`, '#db2777');
+                speakCheerPhrase(`無敵金字塔！${currentName}第一名！`);
+            } else if (stuntName === 'fireworks') {
+                performActionClass('spinjump');
+                playFanfareSound();
+                setTimeout(playWhistleSound, 180);
+                spawnParticles('fireworks', 75);
+                stageState.disco = true;
+                activePhraseText = `🎆 漫天煙火為【${currentName}】喝采！`;
+                spawnDanmaku(`🎆 ${currentName}好棒棒！全場尖叫！`, '#d97706');
+                speakCheerPhrase(`${currentName}好棒棒！呱呱叫！`);
+            }
+
+            addCombo(10);
+        }
+
+        // 點擊「手動打 Call 應援棒」
+        function manualCall(type) {
+            initAudio();
+            addCombo(3);
+
+            if (type === 'quack') {
+                playDoubleQuack();
+                spawnParticles('ducks', 15);
+                spawnDanmaku(`🦆 ${currentName}${currentName}呱呱叫！呱呱！`, '#eab308');
+                pokeMascot('center');
+            } else if (type === 'praise') {
+                playHeartPopSound();
+                spawnParticles('stamps', 22);
+                spawnDanmaku(`👍 蓋章認證：${currentName}真的好棒棒！`, '#ec4899');
+                pokeMascot('left');
+            } else if (type === 'whistle') {
+                playWhistleSound();
+                spawnParticles('confetti', 30);
+                spawnDanmaku(`📣 嗶嗶——！${currentName}超讚的啦！`, '#10b981');
+                pokeMascot('right');
+            }
+        }
+
+        function pokeMascot(pos, customMsg) {
+            initAudio();
+            stageState.pokeOffsets[pos] = 32;
+            if (customMsg) {
+                if (pos === 'center') playDoubleQuack();
+                else playHeartPopSound();
+                spawnDanmaku(customMsg, '#ec4899');
+                spawnParticles('stars', 14);
+                addCombo(2);
+            }
+        }
+
+        function addCombo(val) {
+            cheerCombo += val;
+            const badge = document.getElementById('combo-badge');
+            badge.textContent = `好棒棒能量：🔥 ${cheerCombo}`;
+            badge.style.transform = 'scale(1.18)';
+            setTimeout(() => badge.style.transform = 'scale(1)', 150);
+        }
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('btn-toggle-voice');
+            const txt = document.getElementById('voice-status-text');
+            if (voiceEnabled) {
+                btn.className = "btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-pink-100 text-pink-600 border-2 border-pink-300";
+                txt.textContent = "語音：開";
+            } else {
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                btn.className = "btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-400 border-2 border-slate-200";
+                txt.textContent = "語音：關";
+            }
+        }
+
+        function toggleSfx() {
+            sfxEnabled = !sfxEnabled;
+            const btn = document.getElementById('btn-toggle-sfx');
+            const txt = document.getElementById('sfx-status-text');
+            if (sfxEnabled) {
+                btn.className = "btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-600 border-2 border-amber-300";
+                txt.textContent = "音效：開";
+                playHeartPopSound();
+            } else {
+                btn.className = "btn-jelly flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-400 border-2 border-slate-200";
+                txt.textContent = "音效：關";
+            }
+        }
+
+        /* =========================================================
+         * 9. 舞台彈幕與粒子發射器 (繪製於主舞台 Canvas 中)
+         * ========================================================= */
+        function spawnDanmaku(text, color = '#ec4899') {
+            stageState.danmakus.push({
+                text,
+                color,
+                x: stageCanvas.width * (0.22 + Math.random() * 0.56),
+                y: stageCanvas.height - 95 - Math.random() * 40,
+                vy: 1.3 + Math.random() * 0.6,
+                alpha: 1.0
+            });
+        }
+
+        function spawnParticles(type = 'confetti', count = 25) {
+            const w = stageCanvas.width;
+            const h = stageCanvas.height;
+            const colors = ['#f43f5e', '#ec4899', '#fbbf24', '#38bdf8', '#a855f7', '#4ade80'];
+
+            for (let i = 0; i < count; i++) {
+                const isFirework = type === 'fireworks';
+                stageState.particles.push({
+                    x: isFirework ? w * (0.2 + Math.random() * 0.6) : w * (0.15 + Math.random() * 0.7),
+                    y: isFirework ? h * (0.22 + Math.random() * 0.32) : h * 0.68,
+                    vx: (Math.random() - 0.5) * (isFirework ? 11 : 7.5),
+                    vy: isFirework ? (Math.random() - 0.65) * 11 : -(4.5 + Math.random() * 6.5),
+                    size: 13 + Math.random() * 11,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.16,
+                    alpha: 1,
+                    type: type
+                });
+            }
+        }
+
+        // 收禮者點擊「打開觀看我的專屬應援」
+        function acceptGiftAndPlay() {
+            const modal = document.getElementById('receiver-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            startRoutinePlay();
+        }
+
+        /* =========================================================
+         * 10. 視窗載入初始化與網址參數解析 (支援好友分享連結打開即看)
+         * ========================================================= */
+        window.onload = function () {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+            }
+
+            // 解析網址是否有好友分享參數 (?name=xxx&song=0&praise=xxx&gift=1)
+            const params = new URLSearchParams(window.location.search);
+            const urlName = params.get('name');
+            const urlSong = params.get('song');
+            const urlPraise = params.get('praise');
+            const isGift = params.get('gift');
+
+            if (urlName) {
+                currentName = urlName.trim().slice(0, 10) || "洋洋";
+                document.getElementById('input-name').value = currentName;
+            }
+            if (urlPraise) {
+                currentPraise = urlPraise;
+                const sel = document.getElementById('select-praise');
+                if ([...sel.options].some(o => o.value === urlPraise)) {
+                    sel.value = urlPraise;
+                }
+            }
+            if (urlSong !== null && !isNaN(parseInt(urlSong, 10))) {
+                const sIdx = Math.max(0, Math.min(3, parseInt(urlSong, 10)));
+                selectSong(sIdx, false);
+            } else {
+                selectSong(0, false);
+            }
+
+            // 啟動 60FPS 舞台渲染迴圈
+            requestAnimationFrame(renderStageLoop);
+
+            // 若是透過好友分享連結點進來的，跳出驚喜收禮卡片
+            if (isGift === '1' || urlName) {
+                document.getElementById('receiver-name-title').textContent = currentName;
+                document.getElementById('receiver-praise-subtitle').textContent = `🏅 榮獲：${currentPraise}`;
+                const rModal = document.getElementById('receiver-modal');
+                rModal.classList.remove('hidden');
+                rModal.classList.add('flex');
+                spawnParticles('hearts', 30);
+            } else {
+                setTimeout(() => {
+                    spawnParticles('stars', 20);
+                    spawnDanmaku('🎬 點擊「開始應援並自動錄影」即可保存應援影片分享給好友！', '#ec4899');
+                }, 350);
+            }
+        };
+    </script>
+</body>
+</html>
